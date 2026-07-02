@@ -97,3 +97,8 @@
   poller -> fresh conversation -> user msg + thumbnail persisted -> vision answer persisted. The stall
   watchdog additions do not disturb normal streams. Soak round 4 done — still 0 real anomalies (counter
   counts DONE lines). Gateway ~2.5h uptime, healthy.
+- 00:4x status-cache fix COMPILE-VERIFIED + measured on the rebuilt arm64 app: cold 0.72s (cache fill),
+  warm 0.5ms (was 0.99s EVERY call) — 1400x. (Gotcha: incremental build.sh emits Xplorer.app; the earlier
+  Xplor.app was the stale release rename — first measurement hit the old binary.) QA now runs the branch
+  head (cache + watchdog UI). Draft notes updated to separate artifact-fixes vs branch-only fixes.
+  Every change on release/0.8.11 is now built + verified. Remaining loop time: periodic soak + health.

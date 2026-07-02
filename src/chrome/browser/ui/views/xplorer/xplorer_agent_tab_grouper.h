@@ -38,6 +38,15 @@ class AgentTabGrouper : public TabStripModelObserver {
       TabStripModel* tab_strip_model,
       const TabStripModelChange& change,
       const TabStripSelectionChange& selection) override;
+  // Self-heals managed-group visuals. At startup TabGroupSyncService initializes
+  // AFTER Reconcile() titled the Bookmarks group; ConnectLocalTabGroup then
+  // pushes the auto-saved copy (captured EMPTY at AddToNewGroup, before the
+  // title was set) back onto the local group, wiping title+color — the "blank
+  // Bookmarks header until clicked" bug. Reconcile() already re-stamps visuals
+  // that differ; this hook makes the grouper HEAR the wipe. Loop-safe: the
+  // re-stamp fires kVisualsChanged again, but EnsureGroup compares visuals and
+  // skips the no-op, so it terminates.
+  void OnTabGroupChanged(const TabGroupChange& change) override;
 
  private:
   // Posts a coalesced Reconcile() to run after the current TabStripModel

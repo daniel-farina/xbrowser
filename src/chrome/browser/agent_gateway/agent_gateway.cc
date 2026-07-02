@@ -37,7 +37,9 @@
 #include "chrome/browser/ui/navigator/browser_navigator.h"
 #include "chrome/browser/ui/navigator/browser_navigator_params.h"
 #include "components/sessions/core/session_id.h"
+#include "chrome/browser/ui/tabs/tab_group_model.h"
 #include "chrome/browser/ui/tabs/tab_strip_model.h"
+#include "components/tabs/public/tab_group.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/web_contents.h"
 #include "net/base/ip_endpoint.h"
@@ -55,7 +57,10 @@ namespace agent_gateway {
 namespace {
 AgentGateway* g_instance = nullptr;
 constexpr int kDefaultPort = 9334;
-constexpr int kBacklog = 5;
+// Listen backlog. 5 dropped connections outright when the companion UI + an
+// agent burst >5 simultaneous requests (e.g. several image searches at once —
+// each is a create + appends + a stream); 64 comfortably covers local bursts.
+constexpr int kBacklog = 64;
 
 void ClearLeakedScheduledRunEnv() {
   std::unique_ptr<base::Environment> env = base::Environment::Create();
@@ -656,6 +661,20 @@ void AgentGateway::RouteRequest(int connection_id,
         t.Set("background", own ? own->background : false);
         t.Set("bookmark", own && own->bookmark_node_id != 0);
         t.Set("mine", own && !agent_id.empty() && own->owner == agent_id);
+        // Group: the native tab group (if any) with its CURRENT title, so
+        // agents can see the existing organization (and tests can assert on
+        // group titles, e.g. the Bookmarks header self-heal).
+        if (model->group_model()) {
+          std::optional<tab_groups::TabGroupId> gid = model->GetTabGroupForTab(i);
+          if (gid.has_value()) {
+            const TabGroup* group = model->group_model()->GetTabGroup(*gid);
+            t.Set("group", gid->ToString());
+            t.Set("group_title",
+                  group && group->visual_data()
+                      ? base::UTF16ToUTF8(group->visual_data()->title())
+                      : std::string());
+          }
+        }
         tabs.Append(std::move(t));
       }
     }

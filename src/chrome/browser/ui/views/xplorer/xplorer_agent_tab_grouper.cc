@@ -370,6 +370,17 @@ AgentTabGrouper::~AgentTabGrouper() {
   }
 }
 
+void AgentTabGrouper::OnTabGroupChanged(const TabGroupChange& change) {
+  // Only visuals wipes/renames matter here (see the header comment): at startup
+  // TabGroupSyncService's ConnectLocalTabGroup pushes the auto-saved (empty)
+  // visuals over the freshly-titled Bookmarks group. kVisualsChanged is also
+  // fired by our own re-stamp — EnsureGroup's equality check makes that a
+  // no-op, so this cannot loop.
+  if (change.type == TabGroupChange::kVisualsChanged) {
+    ScheduleReconcile();
+  }
+}
+
 void AgentTabGrouper::OnTabStripModelChanged(
     TabStripModel* tab_strip_model,
     const TabStripModelChange& change,

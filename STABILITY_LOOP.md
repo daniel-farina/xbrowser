@@ -102,3 +102,25 @@
   Xplor.app was the stale release rename — first measurement hit the old binary.) QA now runs the branch
   head (cache + watchdog UI). Draft notes updated to separate artifact-fixes vs branch-only fixes.
   Every change on release/0.8.11 is now built + verified. Remaining loop time: periodic soak + health.
+
+## END-OF-RUN SUMMARY (~8h, 2026-07-01 18:00 -> 02:00)
+DELIVERED: DRAFT release v0.8.11 (10 assets, mac arm64+x86_64 signed/notarized + linux + windows, all
+smoke-tested on the actual artifacts, draft:true — NOT published). Master untouched (ceb9cfa); release
+branch cut clean from master per instruction; PR #13 left open for review.
+
+BUGS FOUND + FIXED (all on release/0.8.11):
+1. Apply non-idempotency (3 stacking/crashing edits) — mac x64 + historical NUC breaker; triple-apply now converges.
+2. Windows CRLF poisoning by the patcher (137 files) + the git stat-cache revert blindness; LF hook + scripted repair.
+3. Gateway backlog 5 -> 64 (dropped connections under burst = vanishing chats).
+4. Infinite 'Grok is thinking…' spinner during xAI outages -> 6-min stall watchdog (found live during a real 503 outage).
+5. >2MB captures die on the receive buffer with a connection reset -> client-side downscale guard.
+6. perf: /api/status 0.99s EVERY call -> 0.5ms warm (grok model-list cache), compile-verified.
+
+TESTED: all pages, scheduler e2e, update checker (no downgrade offer), auth/error paths (401/400),
+concurrency bursts, parallel vision searches, watchdog-UI regression, memory (~180-310MB stable),
+session-store growth (thumbs ~4KB each), 5+ soak rounds — 1 anomaly total (a single vision timeout
+during the xAI recovery; the watchdog now covers that UX).
+
+FOR THE USER: publish decision on draft v0.8.11; the 3 post-draft fixes are branch-only (one more build
+or ship as 0.8.12); merge release/0.8.11 -> master + PR #13 review; NUC python version check (LF-hook
+fallback) is the one loose thread.

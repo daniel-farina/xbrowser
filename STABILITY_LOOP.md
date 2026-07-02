@@ -93,3 +93,7 @@
 - 23:2x xAI RECOVERED — chat re-verified end-to-end on the release binary (CHAT-OK, 80s; service
   still warming). The stall was 100% the upstream outage. Watchdog UI staged into the QA bundle;
   fresh soak round running. (One tick was lost to the Anthropic classifier outage — read-only.)
+- 23:5x REGRESSION PASS on the new watchdog UI (live in the QA panel): pending image consumed by the
+  poller -> fresh conversation -> user msg + thumbnail persisted -> vision answer persisted. The stall
+  watchdog additions do not disturb normal streams. Soak round 4 done — still 0 real anomalies (counter
+  counts DONE lines). Gateway ~2.5h uptime, healthy.

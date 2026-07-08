@@ -466,6 +466,25 @@ function setComposerRunning() {
 // it (the abort path kills the server-side process via /stop) and show a clear
 // retryable error instead of an infinite spinner.
 const STALL_MS = 6 * 60 * 1000;
+
+// ---- Friendly errors: the grok CLI surfaces raw internals like
+//   'Internal error: "image transcription failed: image describe call failed:
+//    API error (status 402 Payment Required): Grok Build usage balance exhausted"'
+// which mean nothing to a user. Map the known account-side failures (quota
+// exhausted, auth expired) to something actionable; pass everything else
+// through untouched so real bugs stay debuggable.
+function friendlyGrokError(raw) {
+  const msg = raw || '';
+  if (/\b402\b|Payment Required|balance exhausted|usage balance|quota exceeded/i.test(msg)) {
+    return 'Your plan’s Grok CLI usage allowance is used up, so Grok can’t answer ' +
+           'here right now (grok.com chat may still work). It refills on your plan’s ' +
+           'cycle — check usage at grok.com, then try again.';
+  }
+  if (/AuthorizationRequired|Unauthorized \(401\)|expired credentials|not logged in|no auth context/i.test(msg)) {
+    return 'Grok needs you to sign in again — run `grok` in a terminal to re-authenticate, then retry.';
+  }
+  return msg;
+}
 setInterval(() => {
   const now = Date.now();
   for (const [convId, st] of Object.entries(streams)) {
@@ -649,7 +668,7 @@ async function sendMessage(text, { retry = false, convId = activeId } = {}) {
     } else {
       const msg = e.message || '';
       const needsLogin = /Unauthorized \(401\)|expired credentials|no auth context|grok login|PermissionDenied|not logged in|unknown model id|Couldn't set model|Run 'grok models'/i.test(msg);
-      st.error = { msg, needsLogin, text };
+      st.error = { msg: friendlyGrokError(msg), needsLogin, text };
     }
   } finally {
     if (streams[convId]) streams[convId].running = false;
@@ -804,7 +823,7 @@ async function runImageSearch(shot) {
       if (reply.trim()) conv.messages.push({ role: 'assistant', content: stripJsonBlock(reply) + '\n\n_(stopped)_', model: st.model });
       delete streams[convId];
     } else {
-      st.error = { msg: e.message || 'image search failed', text: '' };
+      st.error = { msg: friendlyGrokError(e.message) || 'image search failed', text: '' };
     }
   } finally {
     if (streams[convId]) streams[convId].running = false;

@@ -280,7 +280,11 @@ namespace {
 // per-connection read buffer is bounded just above this so anything past it
 // closes cleanly instead of wedging the connection (the default 1 MB read
 // buffer could hang on an oversized body).
-constexpr int kMaxRequestBodyBytes = 1024 * 1024;
+// Logical request-body cap enforced in OnHttpRequest (clean 413). 4MB: image
+// search legitimately POSTs base64 screenshots of a few MB (the panel downscales
+// captures >1.8MB, which previously EXCEEDED the old 1MB cap here — captures in
+// the 1-1.8MB window were being rejected/reset).
+constexpr int kMaxRequestBodyBytes = 4 * 1024 * 1024;
 
 constexpr char kScheduledAgentPrefix[] = "schedule:";
 // Ad-hoc chat agent tabs are owned by "chat:<conv_id>". The per-agent tab group
@@ -379,8 +383,13 @@ bool AgentMayUseTab(const std::string& agent_id,
 }  // namespace
 
 void AgentGateway::OnConnect(int connection_id) {
-  server_->SetReceiveBufferSize(connection_id,
-                                kMaxRequestBodyBytes + 128 * 1024);
+  // The socket read buffer must be well ABOVE kMaxRequestBodyBytes: when a
+  // request outgrows this buffer, net::HttpServer drops the connection before
+  // OnHttpRequest ever runs — the client sees a raw reset instead of the clean
+  // 413 below. 16MB headroom means bodies up to 16MB get the proper 413 and
+  // only truly absurd payloads are reset. (The buffer grows on demand; the cap
+  // costs nothing at idle.)
+  server_->SetReceiveBufferSize(connection_id, 16 * 1024 * 1024);
 }
 
 void AgentGateway::OnHttpRequest(int connection_id,

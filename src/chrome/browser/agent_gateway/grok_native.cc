@@ -2925,8 +2925,19 @@ bool GrokNative::TryHandleRequest(
                    base::UnescapeRule::PATH_SEPARATORS |
                    base::UnescapeRule::URL_SPECIAL_CHARS_EXCEPT_PATH_SEPARATORS);
     std::string dest = "https://grok.com/";
-    if (!query.empty())
-      dest = "https://grok.com/#xplorer_grok=" + StoreGrokWebPending(query);
+    if (!query.empty()) {
+      // grok.com natively consumes ?q= — it prefills AND auto-submits when the
+      // user is signed in (verified Jul 8 2026 on a logged-in profile: loading
+      // /?q=<query> immediately lands on a /c/<conversation-id> URL). This
+      // replaces the pending-prompt handoff (#xplorer_grok=<id> + the
+      // grok_fab.cc injector that polled 2.5s×24 hunting the composer through
+      // CSS selectors): instant, and immune to grok.com DOM changes. The
+      // injector machinery stays compiled but inert (no pending ids are ever
+      // minted now) as a one-release fallback; remove it in the release after
+      // this ships clean.
+      dest = "https://grok.com/?q=" +
+             base::EscapeQueryParamValue(query, /*use_plus=*/true);
+    }
     net::HttpServerResponseInfo resp(net::HTTP_FOUND);
     resp.SetBody("", "text/plain");
     resp.AddHeader("Location", dest);

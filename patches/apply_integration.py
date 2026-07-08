@@ -1973,7 +1973,7 @@ def main(src: Path):
     # (Developer Build) ..."). Prepend the Xplorer product version so users see
     # OUR version first. NOTE: bump XPLORER_VERSION here per release (or wire it
     # to the release version later).
-    XPLORER_VERSION = "0.8.11"
+    XPLORER_VERSION = "0.8.12"
     ss = src / "chrome/app/settings_strings.grdp"
     sst = ss.read_text()
     # Insert "· Xplor" (not "· Chromium"): the broad grd rebrand replaces

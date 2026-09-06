@@ -28,6 +28,10 @@ inline constexpr char kCompanionHost[] = "127.0.0.1";
 // Grok UI is served natively by AgentGateway (default 9334).
 inline constexpr int kCompanionPort = 9334;
 inline constexpr char kCompanionPath[] = "/";
+// Chrome's default side panel is 360px — too narrow for Grok chat tables and
+// the composer, which then clip on the right (especially Windows). 440px is
+// still a sidebar, but leaves room for a 3-column markdown table.
+inline constexpr int kGrokSidePanelWidth = 440;
 inline constexpr char kSearchPath[] = "/search";
 inline constexpr char kWelcomePath[] = "/welcome";
 inline constexpr char kGrokWikiHomeURL[] = "https://grokipedia.com/";

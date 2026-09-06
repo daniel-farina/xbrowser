@@ -233,8 +233,7 @@ std::unique_ptr<views::View> CreateGrokCompanionView(
   // Track this contents so a subsequent OpenGrokSidePanelAt() can navigate it.
   LiveCompanionContents() = contents->GetWeakPtr();
   web_view->AttachContents(std::move(contents));
-  web_view->SetPreferredSize(
-      gfx::Size(SidePanelEntry::kSidePanelDefaultContentWidth, 0));
+  web_view->SetPreferredSize(gfx::Size(kGrokSidePanelWidth, 0));
   return web_view;
 }
 
@@ -427,8 +426,7 @@ void RegisterGrokSidePanel(BrowserWindowInterface* browser) {
             return CreateGrokCompanionView(bwi, prof, scope, url);
           },
           browser, profile, companion_url),
-      base::BindRepeating(
-          []() { return SidePanelEntry::kSidePanelDefaultContentWidth; }));
+      base::BindRepeating([]() { return kGrokSidePanelWidth; }));
   registry->Register(std::move(entry));
 }
 
